@@ -1,0 +1,63 @@
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-sf
+  namespace: poc-6666
+spec:
+  replicas: 2
+  serviceName: mysql-sf
+  selector:
+    matchLabels:
+      app: mysql-sf
+  template:
+    metadata:
+      labels:
+        app: mysql-sf
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - image: mysql:5.6
+        name: mysql-sf
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        ports:
+        - containerPort: 3306
+          name: tcp
+          protocol: TCP
+        volumeMounts:
+        - name: mysql-pv-volume1
+          mountPath: /var/lib/mysql1
+  volumeClaimTemplates:
+    - metadata:
+            name: mysql-pv-volume1
+      spec:
+        storageClassName: manual
+        accessModes:
+                - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+          
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-sf-service
+  namespace: poc-6666
+  labels:
+    app: mysql-sf-service
+spec:
+  clusterIP: None
+  selector:
+    app: mysql-sf
+  ports:
+    - name: tcp
+      protocol: TCP
+      port: 3306
